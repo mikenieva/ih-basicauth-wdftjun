@@ -19,6 +19,10 @@ const authRouter    = require('./routes/auth.routes')
 
 const app = express();
 
+// Generación de sesión
+require("./configs/session.config")(app)
+
+
 // Express View engine setup
 
 app.set('views', path.join(__dirname, 'views'));
@@ -29,6 +33,7 @@ app.use(favicon(path.join(__dirname, 'public', 'images', 'favicon.ico')));
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
 
 app.use(cookieParser());
 

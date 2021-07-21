@@ -49,8 +49,6 @@ router.post("/signup", (req, res) => {
       })
     })
     .then(usuarioCreado => {
-      console.log("El usuario que creamos fue:", usuarioCreado)
-
       res.redirect('/userprofile')
     })
     .catch(e => {
@@ -70,12 +68,73 @@ router.post("/signup", (req, res) => {
 
 
 // GET Profile Page for current user
-
 router.get('/userprofile', (req, res) => {
-    res.render("users/user-profile")
+    res.render("users/user-profile", { 
+      usuarioActual: req.session.usuarioActual 
+    })
+})
+
+// GET - Mostrar el formulario LOGIN
+router.get("/login", (req, res) => {
+  res.render("auth/login")
 })
 
 
+// POST - PROCESO DE AUTENTICACIÓN
+// VERIFICAR QUE EL USUARIO QUE ESTÁ PASANDO SU EMAIL Y CONTRASEÑA ES REALMENTE EL MISMO QUE SE REGISTRÓ
+router.post("/login", (req, res) => {
+
+  const { email, password } = req.body
+
+  // VALIDAR EMAIL Y PASSWORD
+  if(!email || !password){
+    return res.render("auth/login", {
+      msg: "Por favor ingresa email y password."
+    })
+  }
+
+  User.findOne({ email })
+    .then((usuarioEncontrado) => {
+
+      // 1. SI EL USUARIO NO EXISTE EN BASE DE DATOS
+      if(!usuarioEncontrado){
+        return res.render("auth/login", {
+          msg: "El email no fue encontrado"
+        })
+      }
+
+      const autenticacionVerificada = bcryptjs.compareSync(password, usuarioEncontrado.passwordHash)
+
+      // 2. SI EL USUARIO SE EQUIVOCÓ EN LA CONTRASEÑA
+      if(!autenticacionVerificada){
+        return res.render("auth/login", {
+          msg: "La contraseña es incorrecta"
+        })
+      }
+      
+      // 3. SI EL USUARIO COINCIDE LA CONTRASEÑA CON LA BASE DE DATOS
+
+      // Vamos a crear en nuestro objeto SESSSION una propiedad nueva que se llame usuarioActual
+      req.session.usuarioActual = usuarioEncontrado
+      console.log("Sesión actualizada:", req.session)
+      return res.redirect("/userprofile")
+
+    })
+    .catch((e) => console.log(e))
+
+})
+
+
+// POST - CERRAR SESIÓN
+router.post('/logout', (req, res) => {
+  req.session.destroy(err => {
+    if(err){
+      console.log(err)
+    }
+    res.redirect("/")
+  })
+
+})
 
 module.exports = router
 
